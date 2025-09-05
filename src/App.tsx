@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import JsonView from "@uiw/react-json-view";
 import "./App.css";
 
 interface NetworkRequest {
@@ -28,6 +29,62 @@ function App() {
   );
   const [searchFilter, setSearchFilter] = useState("");
   const [isListening, setIsListening] = useState(false);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  };
+
+  const tryParseJson = (str: string) => {
+    try {
+      return JSON.parse(str);
+    } catch {
+      return null;
+    }
+  };
+
+  const ContentBlock = ({
+    title,
+    content,
+  }: {
+    title: string;
+    content: string;
+  }) => {
+    const jsonData = tryParseJson(content);
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+          <button
+            onClick={() => copyToClipboard(content)}
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors"
+            title="Copy to clipboard"
+          >
+            Copy
+          </button>
+        </div>
+        <div className="bg-gray-50 rounded-md p-3 text-sm overflow-x-auto">
+          {jsonData ? (
+            <JsonView
+              value={jsonData}
+              style={{
+                backgroundColor: "transparent",
+              }}
+              enableClipboard={false}
+              displayDataTypes={false}
+              displayObjectSize={false}
+            />
+          ) : (
+            <pre className="font-mono whitespace-pre-wrap">{content}</pre>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     // Load initial requests
@@ -97,7 +154,7 @@ function App() {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-1/2 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -213,71 +270,90 @@ function App() {
             {/* Request Details */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {/* Request Headers */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Request Headers
-                </h3>
-                <div className="bg-gray-50 rounded-md p-3 text-sm font-mono">
-                  {Object.entries(selectedRequest.headers).length > 0 ? (
-                    Object.entries(selectedRequest.headers).map(
-                      ([key, value]) => (
-                        <div key={key} className="mb-1">
-                          <span className="text-gray-600">{key}:</span> {value}
-                        </div>
-                      ),
-                    )
-                  ) : (
-                    <span className="text-gray-500">No headers</span>
-                  )}
+              {Object.entries(selectedRequest.headers).length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Request Headers
+                    </h3>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(
+                          JSON.stringify(selectedRequest.headers, null, 2),
+                        )
+                      }
+                      className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-md p-3 text-sm overflow-x-auto">
+                    <JsonView
+                      value={selectedRequest.headers}
+                      style={{
+                        backgroundColor: "transparent",
+                      }}
+                      enableClipboard={false}
+                      displayDataTypes={false}
+                      displayObjectSize={false}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Request Body */}
               {selectedRequest.body && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Request Body
-                  </h3>
-                  <div className="bg-gray-50 rounded-md p-3 text-sm font-mono whitespace-pre-wrap">
-                    {selectedRequest.body}
-                  </div>
-                </div>
+                <ContentBlock
+                  title="Request Body"
+                  content={selectedRequest.body}
+                />
               )}
 
               {/* Response Headers */}
-              {selectedRequest.response && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Response Headers
-                  </h3>
-                  <div className="bg-gray-50 rounded-md p-3 text-sm font-mono">
-                    {Object.entries(selectedRequest.response.headers).length >
-                    0 ? (
-                      Object.entries(selectedRequest.response.headers).map(
-                        ([key, value]) => (
-                          <div key={key} className="mb-1">
-                            <span className="text-gray-600">{key}:</span>{" "}
-                            {value}
-                          </div>
-                        ),
-                      )
-                    ) : (
-                      <span className="text-gray-500">No headers</span>
-                    )}
+              {selectedRequest.response &&
+                Object.entries(selectedRequest.response.headers).length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        Response Headers
+                      </h3>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(
+                            JSON.stringify(
+                              selectedRequest.response!.headers,
+                              null,
+                              2,
+                            ),
+                          )
+                        }
+                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors"
+                        title="Copy to clipboard"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="bg-gray-50 rounded-md p-3 text-sm overflow-x-auto">
+                      <JsonView
+                        value={selectedRequest.response.headers}
+                        style={{
+                          backgroundColor: "transparent",
+                        }}
+                        enableClipboard={false}
+                        displayDataTypes={false}
+                        displayObjectSize={false}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Response Body */}
               {selectedRequest.response?.body && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Response Body
-                  </h3>
-                  <div className="bg-gray-50 rounded-md p-3 text-sm font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
-                    {selectedRequest.response.body}
-                  </div>
-                </div>
+                <ContentBlock
+                  title="Response Body"
+                  content={selectedRequest.response.body}
+                />
               )}
             </div>
           </div>
