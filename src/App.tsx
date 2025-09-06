@@ -66,9 +66,16 @@ function App() {
       {/* Global Header */}
       <div className="bg-card border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-foreground text-xl font-semibold">
-            Network Observer
-          </h1>
+          <div className="flex items-center gap-2">
+            <img
+              src="/app-icon.png"
+              alt="Network Observer"
+              className="border-border h-6 w-6 rounded-full border bg-stone-200"
+            />
+            <h1 className="text-foreground text-xl font-semibold">
+              Network Observer
+            </h1>
+          </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div

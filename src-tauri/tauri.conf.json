@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Network Observer",
   "version": "0.1.0",
-  "identifier": "Network Observer",
+  "identifier": "network-observer",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",

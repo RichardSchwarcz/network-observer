@@ -1,163 +1,134 @@
 # Network Observer
 
-A desktop application for monitoring HTTP/GraphQL requests from React Native apps in real-time.
+A desktop application for monitoring network traffic from React Native apps during development. Built with Tauri v2, React 19, TypeScript, and Tailwind CSS v4.
+
+*Vibe coded with Claude Code* ⚡
+
+![Network Observer](src/assets/screenshot.png)
 
 ## Features
 
-- 🚀 Real-time network request monitoring
-- 📱 Works with React Native (iOS & Android)
-- 🔍 Search and filter requests by URL, method, or status
-- 📊 View request/response headers, body, and timing
-- 🎯 GraphQL support with operation names and variables
-- 🧹 Clear request history
-- 🔄 Zero-config setup for most apps
+✨ **Real-time Network Monitoring** - View HTTP requests and responses as they happen  
+🔍 **Advanced Filtering** - Search by URL, method, status code  
+📊 **Request Details** - Headers, body, response data with syntax highlighting  
+🌙 **Dark Mode** - Manual toggle with system preference detection  
+📋 **Copy to Clipboard** - Copy URLs, headers, bodies with one click  
 
 ## Quick Start
 
-### 1. Start the Desktop App
+### 1. Install & Run Network Observer
 
 ```bash
-# Install dependencies
+# Clone and setup
+git clone <repository>
+cd network-observer
 pnpm install
 
-# Run in development mode
+# Run in development
 pnpm tauri dev
+
+# Build for production
+pnpm run build
 ```
 
-You should see "Listening on port 8081" in the app header.
+### 2. Setup React Native App
 
-### 2. Add to Your React Native App
+Add the `useSetupNetworkObserver` hook to your React Native app. React Native has built-in WebSocket support, so no additional dependencies needed.
 
-Copy `react-native-interceptor.js` to your React Native project and add this to your `App.js` or `index.js`:
+**Installation**: Just add the hook file to your project and use it in App.tsx:
 
-```javascript
-import { setupNetworkObserver } from './react-native-interceptor';
-
-// Only enable in development
-if (__DEV__) {
-  setupNetworkObserver();
-}
-```
-
-That's it! The interceptor will automatically capture:
-- `fetch()` requests
-- `XMLHttpRequest` requests
-- Requests from popular libraries like Axios
-- GraphQL requests
-
-### 3. Make Network Requests
-
-Run your React Native app and make some network requests. You'll see them appear in the Network Observer desktop app in real-time.
-
-## React Native Setup Examples
-
-### Basic Setup
-```javascript
-// App.js
-import { setupNetworkObserver } from './networkObserver';
+```tsx
+// App.tsx
+import { useSetupNetworkObserver } from 'hooks/useNetworkObserver';
 
 export default function App() {
-  // Initialize network observer
-  useEffect(() => {
-    if (__DEV__) {
-      setupNetworkObserver();
-    }
-  }, []);
-
+  useSetupNetworkObserver(); // Add this one line
+  
+  // Your existing app code
   return (
-    // Your app content
+    // Your app components
   );
 }
 ```
 
-### With Custom Configuration
-```javascript
-import { setupNetworkObserver } from './networkObserver';
+The hook automatically:
+- Intercepts fetch/XMLHttpRequest calls in development mode only
+- Connects to `localhost:8085` (iOS) or `10.0.2.2:8085` (Android emulator) 
+- Sends network data in real-time to Network Observer
 
-if (__DEV__) {
-  setupNetworkObserver({
-    host: 'localhost',    // Default
-    port: 8081,          // Default
-    autoReconnect: true  // Default
-  });
-}
-```
+### 3. Start Monitoring
 
-### With Connection Status
-```javascript
-import NetworkObserver, { isNetworkObserverConnected } from './networkObserver';
+1. Launch Network Observer desktop app
+2. Run your React Native app with network interception
+3. Look for "Connected" status in the top right
+4. Make network requests - they'll appear in real-time
 
-// Check if connected
-console.log('Connected:', isNetworkObserverConnected());
-
-// Disconnect manually
-NetworkObserver.disconnect();
-```
-
-## Supported Libraries
-
-The interceptor works with:
-- ✅ `fetch()` API
-- ✅ `XMLHttpRequest`
-- ✅ Axios
-- ✅ Apollo GraphQL
-- ✅ React Query/TanStack Query
-- ✅ SWR
-- ✅ Any library that uses fetch or XMLHttpRequest
+**For Screenshots/Testing**: Click "Load Mock Data" button when no connection is active to see sample requests.
 
 ## Development
 
-### Building
+### Tech Stack
+- **Tauri v2** - Cross-platform desktop framework
+- **React 19** - Latest React with concurrent features
+- **TypeScript** - Type safety
+- **Tailwind CSS v4** - Utility-first CSS
+- **WebSocket** - Real-time communication
+- **Vite** - Build tool
 
+### Development Commands
 ```bash
-# Build for production
-pnpm tauri build
+# Development
+pnpm tauri dev          # Run desktop app in dev mode
+pnpm dev               # Run web version only
 
-# Build for development (faster)
-pnpm tauri build --debug
+# Code Quality
+pnpm lint              # ESLint check
+pnpm lint:fix          # Auto-fix lint issues
+pnpm format            # Format code with Prettier
+pnpm format:check      # Check formatting
+
+# Build
+pnpm run build         # Build web assets
+pnpm tauri build       # Build desktop app
 ```
 
-### Project Structure
+### Architecture
 
 ```
-network-observer/
-├── src/                          # React frontend
-│   ├── App.tsx                   # Main UI component
-│   └── App.css                   # Styles
-├── src-tauri/                    # Tauri backend
-│   └── src/
-│       └── lib.rs                # WebSocket server & request storage
-├── react-native-interceptor.js   # RN interceptor code
-└── README.md
+React Native App → WebSocket (port 8085) → Network Observer → Display
 ```
+
+## Configuration
+
+- **WebSocket Port**: 8085 (default)
+- **Theme**: Auto-detects system preference
+- **Storage**: In-memory only (no persistence)
 
 ## Troubleshooting
 
-### "WebSocket connection failed"
-- Make sure the desktop app is running
-- Check that port 8081 is not blocked by firewall
-- Verify your React Native app can reach localhost:8081
+**"Waiting for connections..." persists**
+- Ensure React Native app is running with network interception
+- Check that both apps are on the same network
+- Verify firewall isn't blocking port 8085
 
-### "No requests showing up"
-- Ensure the interceptor is initialized before making requests
-- Check that `__DEV__` is true in your RN app
-- Look for console logs: `[NetworkObserver] Interceptors setup complete`
+**Network requests not appearing**
+- Confirm network interception is active in development mode
+- Check WebSocket connection status
+- Verify the hook is properly integrated
 
-### GraphQL requests not showing variables
-- The interceptor captures the raw request body
-- Variables are included in the POST body for most GraphQL clients
-
-## Technical Details
-
-- **WebSocket Server**: Runs on localhost:8081
-- **Data Storage**: In-memory only (no persistence)
-- **Request Format**: JSON with url, method, headers, body, response, timing
-- **Platform Support**: macOS, Windows, Linux (via Tauri)
+**Android connection issues**
+- Use `10.0.2.2` instead of `localhost` for Android emulator
+- For physical devices, use your computer's local IP address
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test with a React Native app
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Run the linter (`pnpm lint`)
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
