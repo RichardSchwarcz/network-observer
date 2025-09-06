@@ -8,11 +8,11 @@ A desktop application for monitoring network traffic from React Native apps duri
 
 ## Features
 
-✨ **Real-time Network Monitoring** - View HTTP requests and responses as they happen  
-🔍 **Advanced Filtering** - Search by URL, method, status code  
-📊 **Request Details** - Headers, body, response data with syntax highlighting  
-🌙 **Dark Mode** - Manual toggle with system preference detection  
-📋 **Copy to Clipboard** - Copy URLs, headers, bodies with one click  
+✨ **Real-time Network Monitoring** - View HTTP requests and responses as they happen
+🔍 **Advanced Filtering** - Search by URL, method, status code
+📊 **Request Details** - Headers, body, response data with syntax highlighting
+🌙 **Dark Mode** - Manual toggle with system preference detection
+📋 **Copy to Clipboard** - Copy URLs, headers, bodies with one click
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ import { useSetupNetworkObserver } from 'hooks/useNetworkObserver';
 
 export default function App() {
   useSetupNetworkObserver(); // Add this one line
-  
+
   // Your existing app code
   return (
     // Your app components
@@ -53,7 +53,7 @@ export default function App() {
 
 The hook automatically:
 - Intercepts fetch/XMLHttpRequest calls in development mode only
-- Connects to `localhost:8085` (iOS) or `10.0.2.2:8085` (Android emulator) 
+- Connects to `localhost:8085` (iOS) or `10.0.2.2:8085` (Android emulator)
 - Sends network data in real-time to Network Observer
 
 ### 3. Start Monitoring
@@ -131,4 +131,4 @@ React Native App → WebSocket (port 8085) → Network Observer → Display
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
