@@ -1,0 +1,50 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4"/>
+      <stop offset="100%" style="stop-color:#0891b2"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
+  
+  <!-- Mobile device -->
+  <rect x="100" y="220" width="50" height="80" rx="12" fill="white"/>
+  <rect x="110" y="235" width="30" height="40" rx="4" fill="url(#accent)"/>
+  <circle cx="125" cy="290" r="6" fill="#64748b"/>
+  
+  <!-- Desktop -->
+  <rect x="360" y="200" width="70" height="50" rx="6" fill="white"/>
+  <rect x="370" y="210" width="50" height="25" rx="2" fill="url(#accent)"/>
+  <rect x="385" y="255" width="20" height="20" rx="2" fill="#64748b"/>
+  
+  <!-- Server -->
+  <rect x="220" y="100" width="70" height="60" rx="8" fill="white"/>
+  <rect x="230" y="115" width="50" height="6" rx="3" fill="url(#accent)"/>
+  <rect x="230" y="127" width="50" height="6" rx="3" fill="url(#accent)"/>
+  <rect x="230" y="139" width="50" height="6" rx="3" fill="url(#accent)"/>
+  
+  <!-- Network connections -->
+  <path d="M150 240 Q185 170 220 130" stroke="url(#accent)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M290 130 Q325 170 360 225" stroke="url(#accent)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  
+  <!-- WebSocket connection (dotted) -->
+  <path d="M150 260 Q256 380 360 240" stroke="#fbbf24" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="15,8"/>
+  
+  <!-- Central observer eye -->
+  <circle cx="256" cy="256" r="40" fill="white"/>
+  <circle cx="256" cy="256" r="25" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="12" fill="white"/>
+  <circle cx="258" cy="254" r="4" fill="#1e1b4b"/>
+  
+  <!-- Activity indicators -->
+  <circle cx="180" cy="300" r="6" fill="#10b981"/>
+  <circle cx="330" cy="320" r="6" fill="#ef4444"/>
+  <circle cx="200" cy="180" r="4" fill="#fbbf24"/>
+  <circle cx="320" cy="180" r="4" fill="#fbbf24"/>
+</svg>
