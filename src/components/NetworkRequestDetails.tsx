@@ -1,30 +1,14 @@
 import { NetworkRequest } from "@/types";
 import { ContentBlock } from "./ContentBlock";
-import { useState } from "react";
 import { useScrollManager } from "@/hooks/useScrollManager";
+import { CopyButton } from "./CopyButton";
 
 interface NetworkRequestDetailsProps {
   request: NetworkRequest;
 }
 
 export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
-  const [copiedSections, setCopiedSections] = useState<Record<string, boolean>>(
-    {},
-  );
-
   const { containerRef, showScrollTop, scrollToTop } = useScrollManager();
-
-  const copyToClipboard = async (text: string, sectionId: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedSections((prev) => ({ ...prev, [sectionId]: true }));
-      setTimeout(() => {
-        setCopiedSections((prev) => ({ ...prev, [sectionId]: false }));
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy to clipboard:", err);
-    }
-  };
 
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString();
@@ -39,12 +23,12 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
   };
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="bg-card relative flex h-full flex-col">
       {/* Request Header */}
-      <div className="p-4 border-b border-gray-200 h-18 bg-gray-50/50">
+      <div className="bg-muted/50 h-18 border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 text-sm font-medium bg-gray-200 text-gray-800 rounded">
+            <span className="bg-muted text-muted-foreground rounded px-2 py-1 text-sm font-medium">
               {request.method}
             </span>
             <span
@@ -53,7 +37,7 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
               {request.response?.status || "Pending"}
             </span>
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-muted-foreground text-xs">
             {formatTimestamp(request.timestamp)}
             {request.duration && ` • ${request.duration}ms`}
           </div>
@@ -61,41 +45,22 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
       </div>
 
       {/* Request Details */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div ref={containerRef} className="flex-1 space-y-6 overflow-y-auto p-4">
         {/* Request URL */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium text-gray-900">Request URL</h3>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-foreground text-lg font-medium">Request URL</h3>
           </div>
-          <div className="bg-gray-50 rounded-md p-3 text-sm overflow-hidden relative">
+          <div className="bg-muted relative overflow-hidden rounded-md p-3 text-sm">
             <div className="absolute top-2 right-2 z-30">
-              <button
-                onClick={() => copyToClipboard(request.url, "url")}
-                className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded border border-gray-200 hover:border-gray-300 shadow-sm"
+              <CopyButton
+                text={request.url}
+                copyKey="request-url"
                 title="Copy URL"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
-              </button>
-              {copiedSections.url && (
-                <div className="absolute top-full right-0 mt-1 px-2 py-1 text-xs bg-gray-800 text-white rounded shadow-lg z-50 whitespace-nowrap">
-                  Copied!
-                </div>
-              )}
+              />
             </div>
             <div className="pr-12">
-              <div className="font-mono whitespace-pre-wrap break-all overflow-x-auto">
+              <div className="overflow-x-auto font-mono break-all whitespace-pre-wrap">
                 {request.url}
               </div>
             </div>
@@ -134,11 +99,11 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 w-10 h-10 bg-white border border-gray-200 hover:border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-gray-600 hover:text-gray-800 z-20"
+          className="bg-background hover:border-ring text-muted-foreground hover:text-foreground fixed right-8 bottom-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-all duration-200 hover:shadow-xl"
           title="Scroll to top"
         >
           <svg
-            className="w-5 h-5"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

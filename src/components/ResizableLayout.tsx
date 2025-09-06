@@ -35,11 +35,11 @@ export function ResizableLayout({
       // Clamp the width between min and max
       const clampedWidth = Math.max(
         minLeftWidth,
-        Math.min(maxLeftWidth, newLeftWidth),
+        Math.min(maxLeftWidth, newLeftWidth)
       );
       setLeftWidth(clampedWidth);
     },
-    [isDragging, minLeftWidth, maxLeftWidth],
+    [isDragging, minLeftWidth, maxLeftWidth]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -73,7 +73,7 @@ export function ResizableLayout({
       {/* Left Panel */}
       <div
         style={{ width: `${leftWidth}%` }}
-        className="bg-white border-r border-gray-200 flex flex-col overflow-hidden"
+        className="bg-card flex flex-col overflow-hidden border-r"
       >
         {leftPanel}
       </div>
@@ -81,8 +81,8 @@ export function ResizableLayout({
       {/* Resize Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className={`w-1 bg-gray-200 hover:bg-blue-400 cursor-ew-resize flex-shrink-0 transition-all duration-150 ${
-          isDragging ? "bg-blue-500 shadow-lg" : ""
+        className={`bg-border hover:bg-ring w-1 flex-shrink-0 cursor-ew-resize transition-all duration-150 ${
+          isDragging ? "bg-ring shadow-lg" : ""
         }`}
         title="Drag to resize"
       />
@@ -90,7 +90,7 @@ export function ResizableLayout({
       {/* Right Panel */}
       <div
         style={{ width: `${100 - leftWidth}%` }}
-        className="bg-white overflow-hidden"
+        className="bg-card overflow-hidden"
       >
         {rightPanel}
       </div>

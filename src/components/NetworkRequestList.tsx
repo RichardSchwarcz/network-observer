@@ -1,5 +1,6 @@
 import { NetworkRequest } from "@/types";
 import { NetworkRequestItem } from "./NetworkRequestItem";
+import { EmptyState } from "./EmptyState";
 
 interface NetworkRequestListProps {
   requests: NetworkRequest[];
@@ -28,19 +29,19 @@ export function NetworkRequestList({
   });
 
   return (
-    <div className="flex flex-col overflow-hidden bg-white">
-      <div className="p-4 linear-border border-b bg-gray-50/50 h-18">
+    <div className="bg-card flex flex-col overflow-hidden">
+      <div className="bg-muted/50 h-18 border-b p-4">
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Filter by URL, method, or status..."
             value={searchFilter}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="flex-1 px-3 py-2 linear-text-sm linear-border border rounded-md linear-focus transition-all duration-150 bg-white"
+            className="focus:ring-ring bg-background text-foreground flex-1 rounded-md border px-3 py-2 text-sm transition-all duration-150 focus:ring-2 focus:outline-none"
           />
           <button
             onClick={onClear}
-            className="px-4 py-2 linear-text-sm font-medium bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 linear-focus transition-all duration-150"
+            className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 focus:ring-ring rounded-md border px-4 py-2 text-sm font-medium transition-all duration-150 focus:ring-2 focus:outline-none"
           >
             Clear
           </button>
@@ -49,14 +50,7 @@ export function NetworkRequestList({
 
       <div className="flex-1 overflow-y-auto">
         {filteredRequests.length === 0 ? (
-          <div className="p-8 text-center linear-text-muted">
-            <div className="text-3xl mb-3">📡</div>
-            <div className="linear-text-sm">
-              {requests.length === 0
-                ? "No requests yet. Make sure your React Native app is sending data to localhost:8085"
-                : "No requests match your filter"}
-            </div>
-          </div>
+          <EmptyState type={requests.length === 0 ? "requests" : "filtered"} />
         ) : (
           <div>
             {filteredRequests

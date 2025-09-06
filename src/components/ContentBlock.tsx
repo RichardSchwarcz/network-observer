@@ -1,12 +1,13 @@
-import { useState } from "react";
 import { JSONTree } from "react-json-tree";
+import { useTheme } from "@/hooks/useTheme";
+import { CopyButton } from "./CopyButton";
 
 interface ContentBlockProps {
   title: string;
   content: string;
 }
 
-const theme = {
+const lightTheme = {
   scheme: "light",
   base00: "transparent",
   base01: "#f9fafb",
@@ -26,18 +27,28 @@ const theme = {
   base0F: "#be185d",
 };
 
-export function ContentBlock({ title, content }: ContentBlockProps) {
-  const [copied, setCopied] = useState(false);
+const darkTheme = {
+  scheme: "dark",
+  base00: "transparent",
+  base01: "#1f2937",
+  base02: "#374151",
+  base03: "#4b5563",
+  base04: "#6b7280",
+  base05: "#9ca3af",
+  base06: "#d1d5db",
+  base07: "#f9fafb",
+  base08: "#f87171",
+  base09: "#fb923c",
+  base0A: "#fbbf24",
+  base0B: "#34d399",
+  base0C: "#22d3ee",
+  base0D: "#60a5fa",
+  base0E: "#a78bfa",
+  base0F: "#f472b6",
+};
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy to clipboard:", err);
-    }
-  };
+export function ContentBlock({ title, content }: ContentBlockProps) {
+  const { theme } = useTheme();
 
   const tryParseJson = (str: string) => {
     try {
@@ -48,39 +59,21 @@ export function ContentBlock({ title, content }: ContentBlockProps) {
   };
 
   const jsonData = tryParseJson(content);
+  const jsonTheme = theme === "dark" ? darkTheme : lightTheme;
 
   return (
     <div className="relative">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-foreground text-lg font-medium">{title}</h3>
       </div>
 
-      <div className="bg-gray-50 rounded-md p-3 text-sm overflow-hidden relative">
+      <div className="bg-muted relative overflow-hidden rounded-md p-3 text-sm">
         <div className="absolute top-2 right-2 z-30">
-          <button
-            onClick={() => copyToClipboard(content)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded border border-gray-200 hover:border-gray-300 shadow-sm"
+          <CopyButton
+            text={content}
+            copyKey={`content-${title.toLowerCase().replace(/\s+/g, "-")}`}
             title="Copy to clipboard"
-          >
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            </svg>
-          </button>
-          {copied && (
-            <div className="absolute top-full right-0 mt-1 px-2 py-1 text-xs bg-gray-800 text-white rounded shadow-lg z-50 whitespace-nowrap">
-              Copied!
-            </div>
-          )}
+          />
         </div>
 
         <div className="pr-12">
@@ -88,7 +81,7 @@ export function ContentBlock({ title, content }: ContentBlockProps) {
             <div className="overflow-x-auto font-mono text-sm">
               <JSONTree
                 data={jsonData}
-                theme={theme}
+                theme={jsonTheme}
                 invertTheme={false}
                 shouldExpandNodeInitially={() => true}
                 hideRoot={true}
@@ -96,7 +89,7 @@ export function ContentBlock({ title, content }: ContentBlockProps) {
               />
             </div>
           ) : (
-            <div className="font-mono whitespace-pre-wrap break-all overflow-x-auto">
+            <div className="text-foreground overflow-x-auto font-mono break-all whitespace-pre-wrap">
               {content}
             </div>
           )}

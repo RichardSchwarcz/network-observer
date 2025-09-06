@@ -36,15 +36,15 @@ export function NetworkRequestItem({
   return (
     <div
       onClick={() => onSelect(request)}
-      className={`p-3 linear-border border-b linear-hover cursor-pointer transition-all duration-150 ${
+      className={`hover:bg-muted/50 cursor-pointer border-b p-3 transition-all duration-150 ${
         isSelected
-          ? "bg-blue-50 border-l-2 border-l-blue-500 linear-shadow-sm"
+          ? "bg-muted border-l-primary border-l-2"
           : "border-l-2 border-l-transparent"
       }`}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="px-2 py-1 linear-text-xs font-medium bg-gray-100 text-gray-700 rounded-md">
+          <span className="bg-muted text-muted-foreground rounded-md px-2 py-1 text-xs font-medium">
             {request.method}
           </span>
           <span
@@ -54,23 +54,23 @@ export function NetworkRequestItem({
           </span>
           {request.response?.status &&
             hasGraphQLErrors(request.response.body) && (
-              <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded border border-red-200">
+              <span className="bg-destructive/10 text-destructive border-destructive/20 rounded border px-1.5 py-0.5 text-xs font-medium">
                 GQL ERROR
               </span>
             )}
         </div>
-        <span className="linear-text-xs linear-text-muted">
+        <span className="text-muted-foreground text-xs">
           {formatTimestamp(request.timestamp)}
         </span>
       </div>
       <div
-        className="linear-text-sm text-gray-800 truncate font-medium mb-1"
+        className="text-foreground mb-1 truncate text-sm font-medium"
         title={request.url}
       >
         {request.url}
       </div>
       {request.duration && (
-        <div className="linear-text-xs linear-text-muted">
+        <div className="text-muted-foreground text-xs">
           {request.duration}ms
         </div>
       )}

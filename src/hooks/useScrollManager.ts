@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 export function useScrollManager() {
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -19,8 +19,8 @@ export function useScrollManager() {
   useEffect(() => {
     const containerElement = containerRef.current;
     if (containerElement) {
-      containerElement.addEventListener('scroll', handleScroll);
-      return () => containerElement.removeEventListener('scroll', handleScroll);
+      containerElement.addEventListener("scroll", handleScroll);
+      return () => containerElement.removeEventListener("scroll", handleScroll);
     }
   }, []);
 
