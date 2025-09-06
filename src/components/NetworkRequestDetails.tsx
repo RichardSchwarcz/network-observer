@@ -1,23 +1,18 @@
 import { NetworkRequest } from "@/types";
 import { ContentBlock } from "./ContentBlock";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+import { useScrollManager } from "@/hooks/useScrollManager";
 
 interface NetworkRequestDetailsProps {
   request: NetworkRequest;
 }
 
 export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [copiedSections, setCopiedSections] = useState<Record<string, boolean>>(
     {},
   );
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [totalMatches, setTotalMatches] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const globalMatchIndexRef = useRef(0);
+
+  const { containerRef, showScrollTop, scrollToTop } = useScrollManager();
 
   const copyToClipboard = async (text: string, sectionId: string) => {
     try {
@@ -43,238 +38,14 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
     return "text-gray-500";
   };
 
-  const scrollToTop = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = 0;
-    }
-  };
-
-  const handleScroll = () => {
-    if (containerRef.current) {
-      setShowScrollTop(containerRef.current.scrollTop > 200);
-    }
-  };
-
-  const countMatches = (text: string, searchTerm: string): number => {
-    if (!searchTerm.trim()) return 0;
-    const regex = new RegExp(
-      searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      "gi",
-    );
-    const matches = text.match(regex);
-    return matches ? matches.length : 0;
-  };
-
-  const highlightText = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) {
-      return text;
-    }
-
-    const regex = new RegExp(
-      `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi",
-    );
-    const parts = text.split(regex);
-
-    return parts.map((part, index) => {
-      if (regex.test(part)) {
-        const currentGlobalIndex = globalMatchIndexRef.current;
-        globalMatchIndexRef.current++;
-        return (
-          <mark
-            key={`${currentGlobalIndex}-${index}`}
-            className={`transition-colors ${
-              currentGlobalIndex === currentMatchIndex
-                ? "bg-orange-300 text-black"
-                : "bg-yellow-300 text-black"
-            }`}
-            data-search-match={currentGlobalIndex}
-          >
-            {part}
-          </mark>
-        );
-      }
-      return part;
-    });
-  };
-
-  const navigateToMatch = (direction: "next" | "prev") => {
-    if (totalMatches === 0) return;
-
-    let newIndex;
-    if (direction === "next") {
-      newIndex =
-        currentMatchIndex >= totalMatches - 1 ? 0 : currentMatchIndex + 1;
-    } else {
-      newIndex =
-        currentMatchIndex <= 0 ? totalMatches - 1 : currentMatchIndex - 1;
-    }
-
-    setCurrentMatchIndex(newIndex);
-
-    // Use setTimeout to ensure DOM is updated after re-render
-    setTimeout(() => {
-      if (containerRef.current) {
-        const targetMark = containerRef.current.querySelector(
-          `mark[data-search-match="${newIndex}"]`,
-        );
-        if (targetMark) {
-          targetMark.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "center",
-          });
-        }
-      }
-    }, 100);
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
-        e.preventDefault();
-        setShowSearch(true);
-        setTimeout(() => searchInputRef.current?.focus(), 0);
-      } else if (e.key === "Escape" && showSearch) {
-        setShowSearch(false);
-        setSearchTerm("");
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch]);
-
-  useEffect(() => {
-    const containerElement = containerRef.current;
-    if (containerElement) {
-      containerElement.addEventListener("scroll", handleScroll);
-      return () => containerElement.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
-
-  // Count total matches when search term changes
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setTotalMatches(0);
-      setCurrentMatchIndex(0);
-      return;
-    }
-
-    let total = 0;
-    // Count matches in URL
-    total += countMatches(request.url, searchTerm);
-    // Count matches in method
-    total += countMatches(request.method, searchTerm);
-    // Count matches in headers
-    if (Object.keys(request.headers).length > 0) {
-      total += countMatches(
-        JSON.stringify(request.headers, null, 2),
-        searchTerm,
-      );
-    }
-    // Count matches in request body
-    if (request.body) {
-      total += countMatches(request.body, searchTerm);
-    }
-    // Count matches in response headers
-    if (request.response && Object.keys(request.response.headers).length > 0) {
-      total += countMatches(
-        JSON.stringify(request.response.headers, null, 2),
-        searchTerm,
-      );
-    }
-    // Count matches in response body
-    if (request.response?.body) {
-      total += countMatches(request.response.body, searchTerm);
-    }
-
-    setTotalMatches(total);
-    setCurrentMatchIndex(0);
-  }, [searchTerm, request]);
-
-  // Reset global match index at the start of each render
-  globalMatchIndexRef.current = 0;
-
   return (
     <div className="h-full flex flex-col relative">
-      {/* Search Bar */}
-      {showSearch && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-2">
-            <div className="flex items-center gap-2">
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search in details..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-48 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onBlur={() => {
-                  if (!searchTerm.trim()) {
-                    setShowSearch(false);
-                  }
-                }}
-              />
-              {totalMatches > 0 && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <span className="text-xs px-2 py-1 bg-gray-100 rounded">
-                    {currentMatchIndex + 1} of {totalMatches}
-                  </span>
-                  <button
-                    onClick={() => navigateToMatch("prev")}
-                    className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    title="Previous match"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => navigateToMatch("next")}
-                    className="p-1 hover:bg-gray-100 rounded transition-colors"
-                    title="Next match"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="text-xs text-gray-500 mt-1 px-1">
-              Press Esc to close
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Request Header */}
       <div className="p-4 border-b border-gray-200 h-18 bg-gray-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="px-2 py-1 text-sm font-medium bg-gray-200 text-gray-800 rounded">
-              {highlightText(request.method, searchTerm)}
+              {request.method}
             </span>
             <span
               className={`text-lg font-medium ${getStatusColor(request.response?.status)}`}
@@ -323,9 +94,11 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
                 </div>
               )}
             </div>
-            <pre className="font-mono whitespace-pre-wrap break-all overflow-x-auto pr-12">
-              {highlightText(request.url, searchTerm)}
-            </pre>
+            <div className="pr-12">
+              <div className="font-mono whitespace-pre-wrap break-all overflow-x-auto">
+                {request.url}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -334,17 +107,12 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
           <ContentBlock
             title="Request Headers"
             content={JSON.stringify(request.headers, null, 2)}
-            searchTerm={searchTerm}
           />
         )}
 
         {/* Request Body */}
         {request.body && (
-          <ContentBlock
-            title="Request Body"
-            content={request.body}
-            searchTerm={searchTerm}
-          />
+          <ContentBlock title="Request Body" content={request.body} />
         )}
 
         {/* Response Headers */}
@@ -353,21 +121,16 @@ export function NetworkRequestDetails({ request }: NetworkRequestDetailsProps) {
             <ContentBlock
               title="Response Headers"
               content={JSON.stringify(request.response.headers, null, 2)}
-              searchTerm={searchTerm}
             />
           )}
 
         {/* Response Body */}
         {request.response?.body && (
-          <ContentBlock
-            title="Response Body"
-            content={request.response.body}
-            searchTerm={searchTerm}
-          />
+          <ContentBlock title="Response Body" content={request.response.body} />
         )}
       </div>
 
-      {/* Scroll to Top Button - Linear.app style */}
+      {/* Scroll to Top Button */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}

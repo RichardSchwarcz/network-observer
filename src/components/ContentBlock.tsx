@@ -1,10 +1,9 @@
-import { JSONTree } from "react-json-tree";
 import { useState } from "react";
+import { JSONTree } from "react-json-tree";
 
 interface ContentBlockProps {
   title: string;
   content: string;
-  searchTerm?: string;
 }
 
 const theme = {
@@ -27,11 +26,7 @@ const theme = {
   base0F: "#be185d",
 };
 
-export function ContentBlock({
-  title,
-  content,
-  searchTerm = "",
-}: ContentBlockProps) {
+export function ContentBlock({ title, content }: ContentBlockProps) {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async (text: string) => {
@@ -50,26 +45,6 @@ export function ContentBlock({
     } catch {
       return null;
     }
-  };
-
-  const highlightText = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text;
-
-    const regex = new RegExp(
-      `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi",
-    );
-    const parts = text.split(regex);
-
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-300 text-black">
-          {part}
-        </mark>
-      ) : (
-        part
-      ),
-    );
   };
 
   const jsonData = tryParseJson(content);
@@ -97,7 +72,7 @@ export function ContentBlock({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
           </button>
@@ -118,88 +93,12 @@ export function ContentBlock({
                 shouldExpandNodeInitially={() => true}
                 hideRoot={true}
                 sortObjectKeys={false}
-                getItemString={(_type, _data, _itemType, itemString) => {
-                  if (!searchTerm.trim()) return <span>{itemString}</span>;
-                  const regex = new RegExp(
-                    `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                    "gi",
-                  );
-                  const parts = itemString.split(regex);
-                  return (
-                    <span>
-                      {parts.map((part, index) =>
-                        regex.test(part) ? (
-                          <mark
-                            key={index}
-                            className="bg-yellow-300 text-black"
-                          >
-                            {part}
-                          </mark>
-                        ) : (
-                          part
-                        ),
-                      )}
-                    </span>
-                  );
-                }}
-                labelRenderer={(keyPath, _nodeType, _expanded, _expandable) => {
-                  const key = keyPath[0];
-                  const keyString = String(key);
-                  if (!searchTerm.trim()) return <span>{keyString}:</span>;
-                  const regex = new RegExp(
-                    `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                    "gi",
-                  );
-                  const parts = keyString.split(regex);
-                  return (
-                    <span>
-                      {parts.map((part, index) =>
-                        regex.test(part) ? (
-                          <mark
-                            key={index}
-                            className="bg-yellow-300 text-black"
-                          >
-                            {part}
-                          </mark>
-                        ) : (
-                          part
-                        ),
-                      )}
-                      :
-                    </span>
-                  );
-                }}
-                valueRenderer={(displayValue, _rawValue, ..._keyPath) => {
-                  const valueString = String(displayValue);
-                  if (!searchTerm.trim()) return <span>{valueString}</span>;
-                  const regex = new RegExp(
-                    `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-                    "gi",
-                  );
-                  const parts = valueString.split(regex);
-                  return (
-                    <span>
-                      {parts.map((part, index) =>
-                        regex.test(part) ? (
-                          <mark
-                            key={index}
-                            className="bg-yellow-300 text-black"
-                          >
-                            {part}
-                          </mark>
-                        ) : (
-                          part
-                        ),
-                      )}
-                    </span>
-                  );
-                }}
               />
             </div>
           ) : (
-            <pre className="font-mono whitespace-pre-wrap break-all overflow-x-auto">
-              {highlightText(content, searchTerm)}
-            </pre>
+            <div className="font-mono whitespace-pre-wrap break-all overflow-x-auto">
+              {content}
+            </div>
           )}
         </div>
       </div>
