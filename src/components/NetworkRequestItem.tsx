@@ -23,6 +23,16 @@ export function NetworkRequestItem({
     return "text-gray-500";
   };
 
+  const hasGraphQLErrors = (responseBody?: string): boolean => {
+    if (!responseBody) return false;
+    try {
+      const parsed = JSON.parse(responseBody);
+      return Array.isArray(parsed.errors) && parsed.errors.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div
       onClick={() => onSelect(request)}
@@ -42,6 +52,12 @@ export function NetworkRequestItem({
           >
             {request.response?.status || "Pending"}
           </span>
+          {request.response?.status &&
+            hasGraphQLErrors(request.response.body) && (
+              <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded border border-red-200">
+                GQL ERROR
+              </span>
+            )}
         </div>
         <span className="linear-text-xs linear-text-muted">
           {formatTimestamp(request.timestamp)}

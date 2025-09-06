@@ -29,7 +29,7 @@ export function NetworkRequestList({
 
   return (
     <div className="flex flex-col overflow-hidden bg-white">
-      <div className="p-4 linear-border border-b bg-gray-50/50">
+      <div className="p-4 linear-border border-b bg-gray-50/50 h-18">
         <div className="flex gap-2">
           <input
             type="text"
