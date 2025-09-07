@@ -16,8 +16,3 @@ export interface NetworkResponse {
   body?: string;
 }
 
-export interface AsyncStorageOperation {
-  type: "setItem" | "removeItem" | "clear" | "getAllData";
-  key?: string;
-  value?: string;
-}

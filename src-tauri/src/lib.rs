@@ -28,39 +28,15 @@ pub struct NetworkResponse {
     pub body: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AsyncStorageOperation {
-    pub id: String,
-    pub operation: String,
-    pub key: Option<String>,
-    pub value: Option<String>,
-    pub keys: Option<Vec<String>>,
-    pub data: Option<HashMap<String, Option<String>>>,
-    pub timestamp: u64,
-    pub success: Option<bool>,
-    pub error: Option<String>,
-    pub command_id: Option<String>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WebSocketMessage {
     #[serde(rename = "network-request")]
     NetworkRequest(NetworkRequest),
-    #[serde(rename = "asyncstorage-operation")]
-    AsyncStorageOperation(AsyncStorageOperation),
-    #[serde(rename = "asyncstorage-command")]
-    AsyncStorageCommand {
-        id: String,
-        operation: String,
-        key: Option<String>,
-        value: Option<String>,
-    },
 }
 
 type RequestStore = Arc<Mutex<Vec<NetworkRequest>>>;
-type AsyncStorageStore = Arc<Mutex<Vec<AsyncStorageOperation>>>;
-type AsyncStorageDataStore = Arc<Mutex<HashMap<String, Option<String>>>>;
 type CommandSender = broadcast::Sender<String>;
 
 // Server-side deduplication to prevent infinite loops and duplicates
@@ -99,58 +75,9 @@ async fn clear_requests(store: tauri::State<'_, RequestStore>) -> Result<(), Str
     Ok(())
 }
 
-#[tauri::command]
-async fn get_async_storage_operations(
-    store: tauri::State<'_, AsyncStorageStore>,
-) -> Result<Vec<AsyncStorageOperation>, String> {
-    let operations = store.lock().map_err(|e| e.to_string())?;
-    Ok(operations.clone())
-}
-
-#[tauri::command]
-async fn get_async_storage_data(
-    store: tauri::State<'_, AsyncStorageDataStore>,
-) -> Result<HashMap<String, Option<String>>, String> {
-    let data = store.lock().map_err(|e| e.to_string())?;
-    Ok(data.clone())
-}
-
-#[tauri::command]
-async fn clear_async_storage_operations(
-    store: tauri::State<'_, AsyncStorageStore>,
-) -> Result<(), String> {
-    let mut operations = store.lock().map_err(|e| e.to_string())?;
-    operations.clear();
-    Ok(())
-}
-
-#[tauri::command]
-async fn send_async_storage_command(
-    operation: String,
-    key: Option<String>,
-    value: Option<String>,
-    command_sender: tauri::State<'_, CommandSender>,
-) -> Result<(), String> {
-    let command_id = uuid::Uuid::new_v4().to_string();
-    let command = WebSocketMessage::AsyncStorageCommand {
-        id: command_id,
-        operation,
-        key,
-        value,
-    };
-
-    let command_json = serde_json::to_string(&command).map_err(|e| e.to_string())?;
-    
-    // Send command to all connected WebSocket clients
-    let _ = command_sender.send(command_json);
-
-    Ok(())
-}
 
 async fn start_websocket_server(
     store: RequestStore,
-    async_storage_store: AsyncStorageStore,
-    async_storage_data_store: AsyncStorageDataStore,
     command_sender: CommandSender,
     dedup_cache: DeduplicationCache,
     app_handle: tauri::AppHandle,
@@ -172,16 +99,12 @@ async fn start_websocket_server(
                     .ok();
 
                 let store = store.clone();
-                let async_storage_store = async_storage_store.clone();
-                let async_storage_data_store = async_storage_data_store.clone();
                 let dedup_cache = dedup_cache.clone();
                 let command_receiver = command_sender.subscribe();
                 let app_handle = app_handle.clone();
                 tauri::async_runtime::spawn(handle_connection(
                     stream,
                     store,
-                    async_storage_store,
-                    async_storage_data_store,
                     dedup_cache,
                     command_receiver,
                     app_handle,
@@ -199,8 +122,6 @@ async fn start_websocket_server(
 async fn handle_connection(
     stream: TcpStream,
     store: RequestStore,
-    async_storage_store: AsyncStorageStore,
-    async_storage_data_store: AsyncStorageDataStore,
     dedup_cache: DeduplicationCache,
     mut command_receiver: broadcast::Receiver<String>,
     app_handle: tauri::AppHandle,
@@ -283,87 +204,14 @@ async fn handle_connection(
                         }
                     }
                 } else {
-                    // If not a NetworkRequest, check if it's a typed message (AsyncStorage operations)
-                    if let Ok(ws_message) = serde_json::from_str::<serde_json::Value>(&text) {
-                        if let Some(msg_type) = ws_message.get("type").and_then(|t| t.as_str()) {
-                            match msg_type {
-                                "asyncstorage-operation" => {
-                                    if let Ok(mut operation) = serde_json::from_str::<AsyncStorageOperation>(&text) {
-                                        if operation.id.is_empty() {
-                                            operation.id = Uuid::new_v4().to_string();
-                                        }
-
-                                        println!("Parsed AsyncStorage operation: {}", operation.operation);
-
-                                        // Update the data store based on operation
-                                        {
-                                            let mut data_store = async_storage_data_store.lock().unwrap();
-                                            match operation.operation.as_str() {
-                                                "setItem" => {
-                                                    if let (Some(key), Some(value)) = (&operation.key, &operation.value) {
-                                                        data_store.insert(key.clone(), Some(value.clone()));
-                                                    }
-                                                }
-                                                "removeItem" => {
-                                                    if let Some(key) = &operation.key {
-                                                        data_store.remove(key);
-                                                    }
-                                                }
-                                                "clear" => {
-                                                    data_store.clear();
-                                                }
-                                                "getAllDataResponse" => {
-                                                    if let Some(data) = &operation.data {
-                                                        data_store.clear();
-                                                        for (key, value) in data.iter() {
-                                                            data_store.insert(key.clone(), value.clone());
-                                                        }
-                                                    }
-                                                }
-                                                _ => {}
-                                            }
-                                        }
-
-                                        // Store the operation in history
-                                        {
-                                            let mut operations = async_storage_store.lock().unwrap();
-                                            operations.push(operation.clone());
-                                        }
-
-                                        // Emit event to frontend
-                                        if let Err(e) = app_handle.emit("asyncstorage-operation", &operation) {
-                                            println!("Failed to emit asyncstorage-operation event: {}", e);
-                                        } else {
-                                            println!("Successfully emitted asyncstorage-operation event");
-                                        }
-                                    } else {
-                                        println!("Failed to parse AsyncStorage operation");
-                                    }
-                                }
-                                _ => {
-                                    println!("Unknown message type: {}", msg_type);
-                                }
-                            }
-                        } else {
-                            println!(
-                                "Failed to parse WebSocket message - Message length: {}",
-                                text.len()
-                            );
-                            println!(
-                                "First 200 chars: {}",
-                                &text[..std::cmp::min(200, text.len())]
-                            );
-                        }
-                    } else {
-                        println!(
-                            "Failed to parse WebSocket message as JSON - Message length: {}",
-                            text.len()
-                        );
-                        println!(
-                            "First 200 chars: {}",
-                            &text[..std::cmp::min(200, text.len())]
-                        );
-                    }
+                    println!(
+                        "Failed to parse WebSocket message as NetworkRequest - Message length: {}",
+                        text.len()
+                    );
+                    println!(
+                        "First 200 chars: {}",
+                        &text[..std::cmp::min(200, text.len())]
+                    );
                 }
             }
             Ok(Message::Close(_)) => {
@@ -399,36 +247,26 @@ async fn handle_connection(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let request_store: RequestStore = Arc::new(Mutex::new(Vec::new()));
-    let async_storage_store: AsyncStorageStore = Arc::new(Mutex::new(Vec::new()));
-    let async_storage_data_store: AsyncStorageDataStore = Arc::new(Mutex::new(HashMap::new()));
     let dedup_cache: DeduplicationCache = Arc::new(Mutex::new(HashMap::new()));
     let (command_sender, _) = broadcast::channel(100);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(request_store.clone())
-        .manage(async_storage_store.clone())
-        .manage(async_storage_data_store.clone())
         .manage(command_sender.clone())
         .invoke_handler(tauri::generate_handler![
             get_requests,
-            clear_requests,
-            get_async_storage_operations,
-            get_async_storage_data,
-            clear_async_storage_operations,
-            send_async_storage_command
+            clear_requests
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
             let store = request_store.clone();
-            let async_storage_store = async_storage_store.clone();
-            let async_storage_data_store = async_storage_data_store.clone();
             let dedup_cache = dedup_cache.clone();
             let command_sender = command_sender.clone();
 
             // Use tauri's async runtime instead of tokio::spawn
             tauri::async_runtime::spawn(async move {
-                start_websocket_server(store, async_storage_store, async_storage_data_store, command_sender, dedup_cache, app_handle).await;
+                start_websocket_server(store, command_sender, dedup_cache, app_handle).await;
             });
 
             Ok(())
